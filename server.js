@@ -34,7 +34,6 @@ initDB();
 // مسار لجلب البيانات مهيكلة وسريعة جداً مع منع التخزين المؤقت
 app.get('/api/system-data', async (req, res) => {
     try {
-        // منع التخزين المؤقت تماماً لضمان تحديث البيانات بدقة وثبات تام عند كل تحديث للصفحة
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -72,73 +71,76 @@ app.get('/api/system-data', async (req, res) => {
     }
 });
 
-// مسار لحفظ وتحديث البيانات بسرعة فائقة ودون أخطاء
+// مسار لحفظ وتحديث البيانات (مُعد خصيصاً ليتعامل مع استيراد الإكسل الضخم دفعة واحدة)
 app.post('/api/system-data', async (req, res) => {
     const payload = req.body;
 
     try {
-        // حفظ الإعدادات العامة
+        const statements = [];
+
+        // 1. حفظ الإعدادات العامة
         const storeKeys = ['towers', 'customWarehouses', 'targetStaffAssignments', 'categoryModelsMap', 'itemTypesCategoriesMap', 'categoryAssignedFieldsMap', 'customSystemFields', 'brandingSettings', 'uiCustomization', 'tabVisibility'];
         for (const key of storeKeys) {
             if (payload[key] !== undefined) {
-                await db.execute({
+                statements.push({
                     sql: `INSERT OR REPLACE INTO system_store (key, value) VALUES (?, ?)`,
                     args: [key, JSON.stringify(payload[key])]
                 });
             }
         }
 
-        // تحديث الأجهزة
+        // 2. تحديث الأجهزة (استيراد الإكسل دفعة واحدة باستخدام Batch لضمان عدم الضياع)
         if (Array.isArray(payload.devices)) {
-            await db.execute(`DELETE FROM devices`);
-            for (let index = 0; index < payload.devices.length; index++) {
-                const d = payload.devices[index];
+            statements.push({ sql: `DELETE FROM devices`, args: [] });
+            payload.devices.forEach((d, index) => {
                 const uniqueId = Number(d.id) || (Date.now() + index + Math.floor(Math.random() * 1000000));
-                await db.execute({
+                statements.push({
                     sql: `INSERT OR REPLACE INTO devices (id, data) VALUES (?, ?)`,
                     args: [uniqueId, JSON.stringify(d)]
                 });
-            }
+            });
         }
 
-        // تحديث الحركات
+        // 3. تحديث الحركات
         if (Array.isArray(payload.movements)) {
-            await db.execute(`DELETE FROM movements`);
-            for (const m of payload.movements) {
-                await db.execute({
+            statements.push({ sql: `DELETE FROM movements`, args: [] });
+            payload.movements.forEach(m => {
+                statements.push({
                     sql: `INSERT INTO movements (data) VALUES (?)`,
                     args: [JSON.stringify(m)]
                 });
-            }
+            });
         }
 
-        // تحديث الصيانة
+        // 4. تحديث الصيانة
         if (Array.isArray(payload.maintenance)) {
-            await db.execute(`DELETE FROM maintenance`);
-            for (const m of payload.maintenance) {
-                await db.execute({
+            statements.push({ sql: `DELETE FROM maintenance`, args: [] });
+            payload.maintenance.forEach(m => {
+                statements.push({
                     sql: `INSERT INTO maintenance (data) VALUES (?)`,
                     args: [JSON.stringify(m)]
                 });
-            }
+            });
         }
 
-        // تحديث المستخدمين
+        // 5. تحديث المستخدمين
         if (Array.isArray(payload.users)) {
-            await db.execute(`DELETE FROM users`);
-            for (let index = 0; index < payload.users.length; index++) {
-                const u = payload.users[index];
+            statements.push({ sql: `DELETE FROM users`, args: [] });
+            payload.users.forEach((u, index) => {
                 const uniqueUserId = Number(u.id) || (Date.now() + index);
-                await db.execute({
+                statements.push({
                     sql: `INSERT OR REPLACE INTO users (id, data) VALUES (?, ?)`,
                     args: [uniqueUserId, JSON.stringify(u)]
                 });
-            }
+            });
         }
+
+        // تنفيذ كافة العمليات دفعة واحدة وبشكل ذري (Atomic Batch) لتجنب أخطاء الإكسل
+        await db.batch(statements, "write");
 
         res.json({ success: true });
     } catch (err) {
-        console.error("خطأ في تنفيذ المعاملة:", err.message);
+        console.error("خطأ في تنفيذ استيراد البيانات:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
