@@ -1,17 +1,25 @@
-{
-  "name": "yemen-system",
-  "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "better-sqlite3": "^11.0.0",
-    "express": "^5.3.0"
-  }
-}
+const express = require('express');
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// الاتصال بقاعدة البيانات بشكل سليم وخفيف
+const db = new Database('database.sqlite', { verbose: console.log });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// قراءة ملفات الواجهة الأمامية إن وجدت في نفس المجلد
+app.use(express.static(path.join(__dirname)));
+
+// مسار تجريبي للتأكد أن السيرفر يعمل
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// تشغيل السيرفر
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
