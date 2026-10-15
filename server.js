@@ -31,9 +31,14 @@ async function initDB() {
 }
 initDB();
 
-// مسار لجلب البيانات مهيكلة وسريعة جداً
+// مسار لجلب البيانات مهيكلة وسريعة جداً مع منع التخزين المؤقت
 app.get('/api/system-data', async (req, res) => {
     try {
+        // منع التخزين المؤقت تماماً لضمان تحديث البيانات بدقة وثبات تام عند كل تحديث للصفحة
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
         const result = {};
         
         const storeRows = await db.execute(`SELECT * FROM system_store`);
