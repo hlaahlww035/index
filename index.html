@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>النظام الشامل لإدارة أصول ومخازن شبكة يمن نت v4.9 (سريع جداً)</title>
+    <title>النظام الشامل لإدارة أصول ومخازن شبكة يمن نت v5.0 (مع السجل الأمني المدمج)</title>
     <!-- Bootstrap 5 RTL CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <!-- FontAwesome Icons -->
@@ -248,6 +248,12 @@
                         <i class="fa-solid fa-screwdriver-wrench me-2"></i><span>إدارة الصيانة والأعطال</span>
                     </a>
                 </li>
+                <!-- السجل الأمني المدمج حديثاً -->
+                <li class="nav-item mb-2" data-screen-nav="audit_logs">
+                    <a class="nav-link" id="audit-logs-tab" onclick="switchSystemTab('audit-logs-tab', 'audit_logs_section', 'audit_logs_section')" role="tab">
+                        <i class="fa-solid fa-shield-halved me-2"></i><span>السجل الأمني وتتبع العمليات</span>
+                    </a>
+                </li>
                 <li class="nav-item mb-2" data-screen-nav="users">
                     <a class="nav-link" id="users-tab" onclick="switchSystemTab('users-tab', 'users', 'users_section')" role="tab">
                         <i class="fa-solid fa-users-gear me-2"></i><span>إدارة المستخدمين والصلاحيات</span>
@@ -265,7 +271,7 @@
                 </li>
             </ul>
             <div class="footer text-center text-muted small border-top border-secondary pt-2">
-                الإصدار الاحترافي v4.9 &copy; 2026
+                الإصدار الاحترافي v5.0 &copy; 2026
             </div>
         </div>
 
@@ -684,7 +690,41 @@
                     </div>
                 </div>
 
-                <!-- 8. USERS & PERMISSIONS TAB -->
+                <!-- 8. AUDIT LOGS TAB (السجل الأمني المدمج) -->
+                <div class="tab-pane fade" id="audit_logs_section" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <h3 class="fw-bold"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>السجل الأمني وتتبع سجل العمليات التاريخي</h3>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="auditSearchInput" class="form-control form-control-sm" placeholder="بحث في السجل..." onkeyup="renderAuditLogsTable()" style="width: 240px;">
+                            <button class="btn btn-outline-success btn-sm text-nowrap" onclick="exportAuditLogsExcel()">
+                                <i class="fa-solid fa-file-excel me-1"></i> تصدير السجل (Excel)
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm text-nowrap" onclick="clearAuditLogs()">
+                                <i class="fa-solid fa-trash-can me-1"></i> تفريغ السجل
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>التاريخ والوقت</th>
+                                            <th>المستخدم المسؤول</th>
+                                            <th>نوع الحدث</th>
+                                            <th>التفاصيل ووصف التغيير</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auditLogsTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. USERS & PERMISSIONS TAB -->
                 <div class="tab-pane fade" id="users" role="tabpanel">
                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                         <h3 class="fw-bold"><i class="fa-solid fa-users-gear me-2 text-primary"></i>إدارة المستخدمين والموظفين وتحديد الصلاحيات</h3>
@@ -717,7 +757,7 @@
                     </div>
                 </div>
 
-                <!-- 9. SEARCH TAB -->
+                <!-- 10. SEARCH TAB -->
                 <div class="tab-pane fade" id="search" role="tabpanel">
                     <h3 class="fw-bold mb-4"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i>الاستعلام الذكي الشامل عن الأجهزة</h3>
                     
@@ -734,7 +774,7 @@
                     <div id="searchResults" class="row justify-content-center"></div>
                 </div>
 
-                <!-- 10. MASTER SETTINGS TAB -->
+                <!-- 11. MASTER SETTINGS TAB -->
                 <div class="tab-pane fade" id="settings" role="tabpanel">
                     <h3 class="fw-bold mb-4"><i class="fa-solid fa-gears me-2 text-primary"></i>شاشة الإعدادات والتحكم الشامل بالنظام</h3>
                     
@@ -1292,7 +1332,7 @@
                 </form>
             </div>
             <div class="modal-footer bg-white px-4 py-2">
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">إغلاق</button>
                 <button type="button" class="btn btn-success btn-sm px-4 fw-bold" id="transferSubmitBtn" onclick="executeWarehouseTransfer()">تأكيد امر التحويل</button>
             </div>
         </div>
@@ -1475,6 +1515,11 @@
             ]
         },
         {
+            sectionKey: "audit_logs_section",
+            sectionName: "السجل الأمني وتتبع العمليات",
+            items: []
+        },
+        {
             sectionKey: "users_section",
             sectionName: "إدارة المستخدمين",
             items: [
@@ -1623,10 +1668,11 @@
     let categoryModelsMap = defaultCategoryModelsMap;
     let brandingSettings = { companyName: "نظام شبكة يمن نت الاحترافي", currency: "$" };
     let uiCustomization = { fontSize: "1rem", primaryColor: "#0d6efd", bgColor: "#f1f5f9", textColor: "#212529" };
-    let tabVisibility = { "dashboard-tab": true, "devices-tab": true, "towers-tab": true, "locations-tab": true, "movements-tab": true, "reports-tab": true, "maintenance-tab": true, "users-tab": true, "search-tab": true, "settings-tab": true };
+    let tabVisibility = { "dashboard-tab": true, "devices-tab": true, "towers-tab": true, "locations-tab": true, "movements-tab": true, "reports-tab": true, "maintenance-tab": true, "audit_logs": true, "users-tab": true, "search-tab": true, "settings-tab": true };
     let devices = [];
     let movements = [];
     let maintenance = [];
+    let auditLogs = []; // السجل الأمني المدمج
     let users = [];
     let targetStaffAssignments = {};
     let currentLoggedInUserObj = null;
@@ -1646,6 +1692,20 @@
         return { screens: screensObj, admin: adminObj };
     }
 
+    // دالة لتسجيل العمليات أمنياً تلقائياً
+    function logSecurityAction(actionType, details) {
+        const logEntry = {
+            id: Date.now() + Math.random(),
+            date: new Date().toLocaleString('ar-EG'),
+            user: currentLoggedInUserObj ? currentLoggedInUserObj.name : 'مستخدم نظام',
+            username: currentLoggedInUserObj ? currentLoggedInUserObj.username : 'system',
+            action: actionType,
+            details: details
+        };
+        auditLogs.push(logEntry);
+        if(auditLogs.length > 1500) auditLogs.shift();
+    }
+
     async function saveSystemData() {
         const payload = {
             devices,
@@ -1653,6 +1713,7 @@
             customWarehouses,
             movements,
             maintenance,
+            auditLogs,
             users,
             targetStaffAssignments,
             categoryModelsMap,
@@ -1687,6 +1748,7 @@
                 customWarehouses = normalizeArray(data.customWarehouses, defaultWarehouses);
                 movements = normalizeArray(data.movements, []);
                 maintenance = normalizeArray(data.maintenance, []);
+                auditLogs = normalizeArray(data.auditLogs, []);
                 users = normalizeArray(data.users, defaultUsers);
                 targetStaffAssignments = data.targetStaffAssignments || {};
                 categoryModelsMap = data.categoryModelsMap || defaultCategoryModelsMap;
@@ -1709,6 +1771,7 @@
                     customWarehouses = normalizeArray(parsed.customWarehouses, defaultWarehouses);
                     movements = normalizeArray(parsed.movements, []);
                     maintenance = normalizeArray(parsed.maintenance, []);
+                    auditLogs = normalizeArray(parsed.auditLogs, []);
                     users = normalizeArray(parsed.users, defaultUsers);
                     targetStaffAssignments = parsed.targetStaffAssignments || {};
                     categoryModelsMap = parsed.categoryModelsMap || defaultCategoryModelsMap;
@@ -1770,7 +1833,7 @@
     }
 
     function switchSystemTab(tabId, paneId, permKey) {
-        if (!checkUserPermission(permKey)) {
+        if (permKey && !checkUserPermission(permKey)) {
             showAlert("عذراً! لا تمتلك صلاحية الدخول لهذه الشاشة.", "danger");
             return false;
         }
@@ -1785,6 +1848,10 @@
 
         if (tabElem) tabElem.classList.add('active');
         if (paneElem) paneElem.classList.add('show', 'active');
+        
+        if (paneId === 'audit_logs_section') {
+            renderAuditLogsTable();
+        }
         return true;
     }
 
@@ -1801,6 +1868,7 @@
             "movements": { tab: "movements-tab", perm: "movements_section" },
             "reports": { tab: "reports-tab", perm: "reports_section" },
             "maintenance": { tab: "maintenance-tab", perm: "maintenance_section" },
+            "audit_logs": { tab: "audit-logs-tab", perm: "audit_logs_section" },
             "users": { tab: "users-tab", perm: "users_section" },
             "search": { tab: "search-tab", perm: "search_section" },
             "settings": { tab: "settings-tab", perm: "settings_section" }
@@ -1817,7 +1885,7 @@
                 if(navItem) {
                     navItem.style.display = hasAccess ? "block" : "none";
                     if (hasAccess && !firstAllowedPane) {
-                        firstAllowedPane = screenIdMatch;
+                        firstAllowedPane = screenIdMatch === 'audit_logs' ? 'audit_logs_section' : screenIdMatch;
                         firstAllowedTab = mappingNav[screenIdMatch].tab;
                     }
                 }
@@ -1884,6 +1952,8 @@
         sessionStorage.setItem('mikrotik_current_user_id', String(foundUser.id));
         sessionStorage.setItem('mikrotik_current_user', foundUser.name);
         document.getElementById("loginScreen").style.display = "none";
+        
+        logSecurityAction('تسجيل دخول', `تم تسجيل الدخول بنجاح للمستخدم: ${foundUser.name}`);
         applyUserPermissionsRestriction();
         renderAll();
         buildPermissionsMatrixUI();
@@ -1893,6 +1963,7 @@
 
     function logoutSystem() {
         clearTimeout(inactivityTimer);
+        logSecurityAction('تسجيل خروج', `تم تسجيل الخروج للمستخدم: ${currentLoggedInUserObj ? currentLoggedInUserObj.name : '-'}`);
         sessionStorage.clear();
         currentLoggedInUserObj = null;
         document.getElementById("loginScreen").style.display = "flex";
@@ -1947,6 +2018,7 @@
         uiCustomization.bgColor = document.getElementById("settingBgColor").value;
         uiCustomization.textColor = document.getElementById("settingTextColor").value;
         
+        logSecurityAction('تعديل الإعدادات', 'تم تحديث مظهر وتنسيقات واجهة النظام');
         saveSystemData();
         applySettingsToUI();
         showAlert("تم حفظ إعدادات المظهر بنجاح!");
@@ -1960,6 +2032,7 @@
         }
         brandingSettings.companyName = document.getElementById("settingCompanyName").value.trim() || "نظام شبكة يمن نت الاحترافي";
         brandingSettings.currency = document.getElementById("settingCurrency").value.trim() || "$";
+        logSecurityAction('تعديل الهوية', `تم تحديث اسم المؤسسة إلى: ${brandingSettings.companyName}`);
         saveSystemData();
         applySettingsToUI();
         showAlert("تم حفظ إعدادات الهوية بنجاح!");
@@ -1983,6 +2056,7 @@
         renderMovementsTable();
         renderMaintenanceTable();
         generateReport();
+        renderAuditLogsTable();
         renderUsersTable();
         saveSystemData();
     }
@@ -2085,6 +2159,7 @@
         });
 
         targetStaffAssignments[targetName] = selected;
+        logSecurityAction('تعديل المشرفين', `تم تحديث طاقم الإشراف والمسؤولين عن (${targetName})`);
         saveSystemData();
 
         bootstrap.Modal.getInstance(document.getElementById('manageStaffModal')).hide();
@@ -2310,6 +2385,7 @@
         if(itemTypesCategoriesMap[name]) return showAlert("هذا الصنف موجود مسبقاً.", "danger");
         itemTypesCategoriesMap[name] = {};
         document.getElementById("newMgrItemTypeName").value = "";
+        logSecurityAction('إضافة صنف', `تم إنشاء صنف جديد: ${name}`);
         saveSystemData(); openCategoriesManagerModal();
         document.getElementById("mgrItemTypeSelect").value = name; loadMgrCategories();
         showAlert("تم إضافة الصنف بنجاح!");
@@ -2327,6 +2403,7 @@
         itemTypesCategoriesMap[clean] = itemTypesCategoriesMap[oldName]; delete itemTypesCategoriesMap[oldName];
         devices.forEach(d => { if(d.itemType === oldName) d.itemType = clean; });
         Object.keys(categoryAssignedFieldsMap).forEach(k => { if(k.startsWith(oldName + "::")) { const nk = clean + k.substring(oldName.length); categoryAssignedFieldsMap[nk] = categoryAssignedFieldsMap[k]; delete categoryAssignedFieldsMap[k]; }});
+        logSecurityAction('تعديل صنف', `تم تغيير اسم الصنف من (${oldName}) إلى (${clean})`);
         saveSystemData(); openCategoriesManagerModal(); document.getElementById("mgrItemTypeSelect").value = clean; loadMgrCategories(); renderAll();
         showAlert("تم تعديل اسم الصنف بنجاح!");
     }
@@ -2338,6 +2415,7 @@
         if(!confirm(`هل تريد حذف الصنف (${it})؟\nسيتم حذف ارتباط فئاته بهذا الصنف، مع الإبقاء على سجلات الأجهزة التاريخية.`)) return;
         const categories = Object.keys(itemTypesCategoriesMap[it] || {}); delete itemTypesCategoriesMap[it];
         categories.forEach(cat => { delete categoryAssignedFieldsMap[getCategoryConfigKey(it, cat)]; const used = Object.values(itemTypesCategoriesMap).some(c => Object.prototype.hasOwnProperty.call(c, cat)); if(!used){delete categoryModelsMap[cat]; delete categoryAssignedFieldsMap[cat];} });
+        logSecurityAction('حذف صنف', `تم حذف الصنف: ${it}`);
         saveSystemData(); openCategoriesManagerModal(); renderAll(); showAlert("تم حذف الصنف بنجاح!");
     }
 
@@ -2357,7 +2435,9 @@
         if(itemTypesCategoriesMap[it][catName]) return showAlert("هذه الفئة موجودة مسبقاً داخل الصنف المحدد.", "danger");
         itemTypesCategoriesMap[it][catName] = []; if(!categoryModelsMap[catName]) categoryModelsMap[catName] = [];
         categoryAssignedFieldsMap[getCategoryConfigKey(it, catName)] = ["name", "location", "status", "price", "currency", "notes"];
-        document.getElementById("newMgrCategoryName").value = ""; saveSystemData(); loadMgrCategories(); document.getElementById("mgrCategorySelect").value = catName; loadMgrFieldsConfig(); populateCategorySelects(); showAlert("تم إضافة الفئة بنجاح!");
+        document.getElementById("newMgrCategoryName").value = ""; 
+        logSecurityAction('إضافة فئة', `تم إضافة الفئة (${catName}) تحت الصنف (${it})`);
+        saveSystemData(); loadMgrCategories(); document.getElementById("mgrCategorySelect").value = catName; loadMgrFieldsConfig(); populateCategorySelects(); showAlert("تم إضافة الفئة بنجاح!");
     }
 
     function editMgrCategory() {
@@ -2369,7 +2449,9 @@
         itemTypesCategoriesMap[it][clean] = itemTypesCategoriesMap[it][oldCat]; delete itemTypesCategoriesMap[it][oldCat];
         if(!categoryModelsMap[clean]) categoryModelsMap[clean] = [...(categoryModelsMap[oldCat] || itemTypesCategoriesMap[it][clean])];
         const oldKey=getCategoryConfigKey(it,oldCat), newKey=getCategoryConfigKey(it,clean); if(categoryAssignedFieldsMap[oldKey]){categoryAssignedFieldsMap[newKey]=categoryAssignedFieldsMap[oldKey];delete categoryAssignedFieldsMap[oldKey];}
-        devices.forEach(d=>{if(d.itemType===it&&d.category===oldCat)d.category=clean;}); saveSystemData(); openCategoriesManagerModal(); document.getElementById("mgrItemTypeSelect").value=it; loadMgrCategories(); document.getElementById("mgrCategorySelect").value=clean; loadMgrFieldsConfig(); renderAll(); showAlert("تم تعديل اسم الفئة بنجاح!");
+        devices.forEach(d=>{if(d.itemType===it&&d.category===oldCat)d.category=clean;}); 
+        logSecurityAction('تعديل فئة', `تم تعديل اسم الفئة من (${oldCat}) إلى (${clean})`);
+        saveSystemData(); openCategoriesManagerModal(); document.getElementById("mgrItemTypeSelect").value=it; loadMgrCategories(); document.getElementById("mgrCategorySelect").value=clean; loadMgrFieldsConfig(); renderAll(); showAlert("تم تعديل اسم الفئة بنجاح!");
     }
 
     function deleteMgrCategory() {
@@ -2377,6 +2459,7 @@
         const it=document.getElementById("mgrItemTypeSelect").value, cat=document.getElementById("mgrCategorySelect").value; if(!it||!cat)return showAlert("اختر الصنف والفئة المراد حذفهما أولاً.","warning");
         if(!confirm(`هل تريد حذف الفئة (${cat}) من الصنف (${it})؟\nسيتم الإبقاء على سجلات الأجهزة السابقة.`))return; delete itemTypesCategoriesMap[it][cat]; delete categoryAssignedFieldsMap[getCategoryConfigKey(it,cat)];
         const used=Object.values(itemTypesCategoriesMap).some(c=>Object.prototype.hasOwnProperty.call(c,cat)); if(!used){delete categoryModelsMap[cat];delete categoryAssignedFieldsMap[cat];}
+        logSecurityAction('حذف فئة', `تم حذف الفئة (${cat}) من الصنف (${it})`);
         saveSystemData();loadMgrCategories();renderCategoriesConfigTable();populateCategorySelects();renderAll();showAlert("تم حذف الفئة بنجاح!");
     }
 
@@ -2387,17 +2470,17 @@
         const fc=document.getElementById("mgrFieldsCheckboxesContainer");fc.innerHTML="";const assigned=getAssignedFieldKeys(it,cat);getAllSystemFields().forEach(f=>{const checked=assigned.includes(f.key)?'checked':'';const custom=Object.prototype.hasOwnProperty.call(customSystemFields||{},f.key);fc.innerHTML+=`<div class="col-md-3"><div class="border rounded bg-light p-2 h-100"><div class="d-flex align-items-center justify-content-between gap-2"><div class="form-check flex-grow-1"><input class="form-check-input mgr-field-checkbox" type="checkbox" value="${escapeHtml(f.key)}" id="mgr_f_${escapeHtml(f.key)}" ${checked}><label class="form-check-label small fw-bold text-dark" for="mgr_f_${escapeHtml(f.key)}">${escapeHtml(f.label)} ${custom?'<span class="badge bg-info text-dark">مخصص</span>':'<span class="badge bg-secondary">نظامي</span>'}</label></div>${custom?`<div class="btn-group btn-group-sm"><button class="btn btn-outline-primary py-0" title="تعديل" onclick="editCustomField('${escapeHtml(f.key)}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-danger py-0" title="حذف" onclick="deleteCustomField('${escapeHtml(f.key)}')"><i class="fa-solid fa-trash"></i></button></div>`:''}</div></div></div>`;});
     }
 
-    function addNewModelToCategory() { const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value,name=document.getElementById("newMgrModelName").value.trim(); if(!it||!cat)return showAlert("اختر الصنف والفئة أولاً.","warning");if(!name)return showAlert("أدخل اسم الموديل.","warning");const arr=itemTypesCategoriesMap[it][cat]||(itemTypesCategoriesMap[it][cat]=[]);if(arr.includes(name))return showAlert("هذا الموديل موجود مسبقاً.","danger");arr.push(name);if(!categoryModelsMap[cat])categoryModelsMap[cat]=[];if(!categoryModelsMap[cat].includes(name))categoryModelsMap[cat].push(name);document.getElementById("newMgrModelName").value="";saveSystemData();loadMgrFieldsConfig();renderCategoriesConfigTable();showAlert("تم إضافة الموديل بنجاح!"); }
+    function addNewModelToCategory() { const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value,name=document.getElementById("newMgrModelName").value.trim(); if(!it||!cat)return showAlert("اختر الصنف والفئة أولاً.","warning");if(!name)return showAlert("أدخل اسم الموديل.","warning");const arr=itemTypesCategoriesMap[it][cat]||(itemTypesCategoriesMap[it][cat]=[]);if(arr.includes(name))return showAlert("هذا الموديل موجود مسبقاً.","danger");arr.push(name);if(!categoryModelsMap[cat])categoryModelsMap[cat]=[];if(!categoryModelsMap[cat].includes(name))categoryModelsMap[cat].push(name);document.getElementById("newMgrModelName").value=""; logSecurityAction('إضافة موديل', `تم إضافة الموديل (${name}) للفئة (${cat})`); saveSystemData();loadMgrFieldsConfig();renderCategoriesConfigTable();showAlert("تم إضافة الموديل بنجاح!"); }
 
-    function removeModelFromMgr(cat,index){const it=document.getElementById("mgrItemTypeSelect").value;if(!it||!itemTypesCategoriesMap[it]?.[cat])return;if(!confirm("هل تريد حذف هذا الموديل من الفئة؟"))return;itemTypesCategoriesMap[it][cat].splice(index,1);const remaining=Object.values(itemTypesCategoriesMap).flatMap(c=>c[cat]||[]);categoryModelsMap[cat]=[...new Set(remaining)];saveSystemData();loadMgrFieldsConfig();renderCategoriesConfigTable();showAlert("تم حذف الموديل بنجاح!");}
+    function removeModelFromMgr(cat,index){const it=document.getElementById("mgrItemTypeSelect").value;if(!it||!itemTypesCategoriesMap[it]?.[cat])return;if(!confirm("هل تريد حذف هذا الموديل من الفئة؟"))return;itemTypesCategoriesMap[it][cat].splice(index,1);const remaining=Object.values(itemTypesCategoriesMap).flatMap(c=>c[cat]||[]);categoryModelsMap[cat]=[...new Set(remaining)]; logSecurityAction('حذف موديل', `تم حذف موديل من الفئة: ${cat}`); saveSystemData();loadMgrFieldsConfig();renderCategoriesConfigTable();showAlert("تم حذف الموديل بنجاح!");}
 
-    function saveCategoryFieldsConfig(){const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value;if(!it||!cat)return showAlert("يرجى اختيار الصنف والفئة أولاً.","warning");const selected=[];document.querySelectorAll('.mgr-field-checkbox:checked').forEach(cb=>selected.push(cb.value));categoryAssignedFieldsMap[getCategoryConfigKey(it,cat)]=selected;saveSystemData();loadMgrFieldsConfig();showAlert("تم حفظ الحقول المرتبطة بالصنف والفئة بنجاح!");}
+    function saveCategoryFieldsConfig(){const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value;if(!it||!cat)return showAlert("يرجى اختيار الصنف والفئة أولاً.","warning");const selected=[];document.querySelectorAll('.mgr-field-checkbox:checked').forEach(cb=>selected.push(cb.value));categoryAssignedFieldsMap[getCategoryConfigKey(it,cat)]=selected; logSecurityAction('تحديث الحقول', `تم تعديل الحقول المخصصة للفئة (${cat})`); saveSystemData();loadMgrFieldsConfig();showAlert("تم حفظ الحقول المرتبطة بالصنف والفئة بنجاح!");}
 
     function toggleCustomFieldOptions(){document.getElementById("customFieldOptionsWrap").style.display=document.getElementById("customFieldType").value==='select'?'':'none';}
     function openCustomFieldModal(){if(!checkUserPermission('set_cat_models'))return;if(!document.getElementById("mgrItemTypeSelect").value||!document.getElementById("mgrCategorySelect").value)return showAlert("اختر الصنف والفئة أولاً قبل إضافة حقل.","warning");document.getElementById("customFieldOldKey").value="";document.getElementById("customFieldLabel").value="";document.getElementById("customFieldType").value="text";document.getElementById("customFieldOptions").value="";document.getElementById("customFieldCol").value="col-md-6";document.getElementById("customFieldRequired").checked=false;document.getElementById("customFieldModalTitle").innerHTML='<i class="fa-solid fa-square-plus me-2"></i>إضافة حقل جديد';toggleCustomFieldOptions();new bootstrap.Modal(document.getElementById('customFieldModal')).show();}
     function editCustomField(key){const f=customSystemFields[key];if(!f)return;document.getElementById("customFieldOldKey").value=key;document.getElementById("customFieldLabel").value=f.label||"";document.getElementById("customFieldType").value=f.type||"text";document.getElementById("customFieldOptions").value=(f.options||[]).join(', ');document.getElementById("customFieldCol").value=f.col||"col-md-6";document.getElementById("customFieldRequired").checked=!!f.required;document.getElementById("customFieldModalTitle").innerHTML='<i class="fa-solid fa-pen me-2"></i>تعديل الحقل';toggleCustomFieldOptions();new bootstrap.Modal(document.getElementById('customFieldModal')).show();}
-    function saveCustomField(){if(!checkUserPermission('set_cat_models'))return;const oldKey=document.getElementById("customFieldOldKey").value,label=document.getElementById("customFieldLabel").value.trim(),type=document.getElementById("customFieldType").value,options=document.getElementById("customFieldOptions").value.split(',').map(v=>v.trim()).filter(Boolean),col=document.getElementById("customFieldCol").value,required=document.getElementById("customFieldRequired").checked;if(!label)return showAlert("أدخل اسم الحقل.","warning");if(type==='select'&&!options.length)return showAlert("أدخل خيارات القائمة المنسدلة.","warning");const key=oldKey||('custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7));customSystemFields[key]={key,label,type,options:type==='select'?options:[],col,required,custom:true};const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value,pair=getCategoryConfigKey(it,cat);if(!oldKey){const assigned=getAssignedFieldKeys(it,cat).slice();if(!assigned.includes(key))assigned.push(key);categoryAssignedFieldsMap[pair]=assigned;}saveSystemData();bootstrap.Modal.getInstance(document.getElementById('customFieldModal')).hide();loadMgrFieldsConfig();showAlert(oldKey?"تم تعديل الحقل بنجاح!":"تم إضافة الحقل وربطه بالفئة الحالية بنجاح!");}
-    function deleteCustomField(key){if(!checkUserPermission('set_cat_models'))return;const f=customSystemFields[key];if(!f)return;if(!confirm(`هل تريد حذف الحقل (${f.label}) نهائياً؟\nسيتم إزالته من جميع الفئات.`))return;delete customSystemFields[key];Object.keys(categoryAssignedFieldsMap).forEach(k=>{categoryAssignedFieldsMap[k]=(categoryAssignedFieldsMap[k]||[]).filter(x=>x!==key);});saveSystemData();loadMgrFieldsConfig();showAlert("تم حذف الحقل المخصص بنجاح!");}
+    function saveCustomField(){if(!checkUserPermission('set_cat_models'))return;const oldKey=document.getElementById("customFieldOldKey").value,label=document.getElementById("customFieldLabel").value.trim(),type=document.getElementById("customFieldType").value,options=document.getElementById("customFieldOptions").value.split(',').map(v=>v.trim()).filter(Boolean),col=document.getElementById("customFieldCol").value,required=document.getElementById("customFieldRequired").checked;if(!label)return showAlert("أدخل اسم الحقل.","warning");if(type==='select'&&!options.length)return showAlert("أدخل خيارات القائمة المنسدلة.","warning");const key=oldKey||('custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7));customSystemFields[key]={key,label,type,options:type==='select'?options:[],col,required,custom:true};const it=document.getElementById("mgrItemTypeSelect").value,cat=document.getElementById("mgrCategorySelect").value,pair=getCategoryConfigKey(it,cat);if(!oldKey){const assigned=getAssignedFieldKeys(it,cat).slice();if(!assigned.includes(key))assigned.push(key);categoryAssignedFieldsMap[pair]=assigned;} logSecurityAction('حفظ حقل مخصص', `تم حفظ الحقل المخصص: ${label}`); saveSystemData();bootstrap.Modal.getInstance(document.getElementById('customFieldModal')).hide();loadMgrFieldsConfig();showAlert(oldKey?"تم تعديل الحقل بنجاح!":"تم إضافة الحقل وربطه بالفئة الحالية بنجاح!");}
+    function deleteCustomField(key){if(!checkUserPermission('set_cat_models'))return;const f=customSystemFields[key];if(!f)return;if(!confirm(`هل تريد حذف الحقل (${f.label}) نهائياً؟\nسيتم إزالته من جميع الفئات.`))return;delete customSystemFields[key];Object.keys(categoryAssignedFieldsMap).forEach(k=>{categoryAssignedFieldsMap[k]=(categoryAssignedFieldsMap[k]||[]).filter(x=>x!==key);}); logSecurityAction('حذف حقل', `تم حذف الحقل المخصص: ${f.label}`); saveSystemData();loadMgrFieldsConfig();showAlert("تم حذف الحقل المخصص بنجاح!");}
 
     function renderTowersView() {
         const container = document.getElementById("towersContainer");
@@ -2526,8 +2609,10 @@
         if(isEdit) {
             const index = towers.findIndex(t => t.name === oldName);
             if(index !== -1) towers[index] = towerData;
+            logSecurityAction('تعديل برج', `تم تعديل بيانات البرج: ${name}`);
         } else {
             towers.push(towerData);
+            logSecurityAction('إضافة برج', `تم إضافة برج جديد: ${name}`);
         }
 
         saveSystemData();
@@ -2566,6 +2651,7 @@
         }
         if(confirm(`هل أنت تأكد من حذف البرج (${name})؟`)) {
             towers = towers.filter(t => t.name !== name);
+            logSecurityAction('حذف برج', `تم حذف البرج: ${name}`);
             saveSystemData();
             renderTowersView();
             populateLocationSelects();
@@ -2626,8 +2712,10 @@
         if(isEdit) {
             const idx = customWarehouses.findIndex(w => w.name === oldName);
             if(idx !== -1) customWarehouses[idx] = warehouseData;
+            logSecurityAction('تعديل مخزن', `تم تعديل بيانات المخزن: ${name}`);
         } else {
             customWarehouses.push(warehouseData);
+            logSecurityAction('إضافة مخزن', `تم إنشاء مخزن جديد: ${name}`);
         }
 
         saveSystemData();
@@ -2668,6 +2756,7 @@
         }
         if(confirm(`هل تريد حذف المخزن (${name})؟`)) {
             customWarehouses = customWarehouses.filter(item => item.name !== name);
+            logSecurityAction('حذف مخزن', `تم حذف المخزن: ${name}`);
             saveSystemData();
             renderLocationsView();
             populateLocationSelects();
@@ -2856,6 +2945,79 @@
         new bootstrap.Modal(document.getElementById('viewMovementModal')).show();
     }
 
+    // دوال السجل الأمني المضافة حديثاً
+    function renderAuditLogsTable() {
+        const tbody = document.getElementById("auditLogsTableBody");
+        if(!tbody) return;
+        tbody.innerHTML = "";
+
+        if(!checkUserPermission('audit_logs_section')) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">عذراً، لا تمتلك صلاحية استعراض السجل الأمني.</td></tr>`;
+            return;
+        }
+
+        const searchQuery = document.getElementById("auditSearchInput") ? document.getElementById("auditSearchInput").value.toLowerCase() : "";
+        const reversedLogs = [...auditLogs].reverse();
+
+        if(reversedLogs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">لا توجد سجلات أمنية مسجلة حتى الآن.</td></tr>`;
+            return;
+        }
+
+        reversedLogs.forEach((log, idx) => {
+            if(searchQuery && !log.user.toLowerCase().includes(searchQuery) && !log.action.toLowerCase().includes(searchQuery) && !log.details.toLowerCase().includes(searchQuery)) return;
+
+            let badgeColor = "bg-primary";
+            if(log.action.includes('حذف')) badgeColor = "bg-danger";
+            if(log.action.includes('تعديل')) badgeColor = "bg-warning text-dark";
+            if(log.action.includes('إضافة') || log.action.includes('تسجيل')) badgeColor = "bg-success";
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><small class="text-muted">${escapeHtml(log.date)}</small></td>
+                    <td class="fw-bold">${escapeHtml(log.user)} <code class="small">(${escapeHtml(log.username)})</code></td>
+                    <td><span class="badge ${badgeColor}">${escapeHtml(log.action)}</span></td>
+                    <td>${escapeHtml(log.details)}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function clearAuditLogs() {
+        if(!checkUserPermission('audit_logs_section')) return;
+        if(confirm("هل أنت متأكد من تفريغ كافة السجلات الأمنية؟")) {
+            auditLogs = [];
+            saveSystemData();
+            renderAuditLogsTable();
+            showAlert("تم تفريغ السجل الأمني بنجاح!");
+        }
+    }
+
+    function exportAuditLogsExcel() {
+        if(!checkUserPermission('audit_logs_section')) return;
+        let htmlTable = `
+            <html dir="rtl"><head><meta charset="utf-8">
+            <style>table{border-collapse:collapse;width:100%;font-family:'Cairo',sans-serif;}th,td{border:1px solid #b0bec5;padding:10px;text-align:center;font-size:13px;}th{background-color:#0f172a;color:white;font-weight:bold;}</style>
+            </head><body>
+            <h3 style="text-align:center; color:#333;">السجل الأمني وتتبع العمليات</h3>
+            <table><thead><tr><th>#</th><th>التاريخ والوقت</th><th>المستخدم</th><th>الحدث</th><th>التفاصيل</th></tr></thead><tbody>`;
+        auditLogs.forEach((log, idx) => {
+            htmlTable += `<tr><td>${idx + 1}</td><td>${escapeHtml(log.date)}</td><td>${escapeHtml(log.user)}</td><td>${escapeHtml(log.action)}</td><td>${escapeHtml(log.details)}</td></tr>`;
+        });
+        htmlTable += `</tbody></table></body></html>`;
+
+        const blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `audit_logs_${Date.now()}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        showAlert("تم تصدير السجل الأمني بنجاح كملف Excel!");
+    }
+
     function exportMovementsExcel() {
         const searchQuery = document.getElementById("movementSearchInput") ? document.getElementById("movementSearchInput").value.toLowerCase() : "";
         const filtered = movements.filter(m => {
@@ -2873,7 +3035,6 @@
             return;
         }
 
-        // تحديد الحقول التي تحتوي على بيانات فقط لتصديرها ديناميكياً
         const availableMovementKeys = [
             { key: 'date', label: 'التاريخ' },
             { key: 'type', label: 'نوع الحركة' },
@@ -3126,6 +3287,7 @@
                     }
                 });
 
+                logSecurityAction('استيراد أجهزة', `تم استيراد ${importedCount} جهاز بنجاح عبر ملف Excel`);
                 saveSystemData();
                 renderAll();
                 showAlert(`تم استيراد ${importedCount} جهاز بنجاح وتفعيل قابليتها للتعديل والتحويل!`);
@@ -3206,6 +3368,7 @@
         delete categoryAssignedFieldsMap[getCategoryConfigKey(itemType, category)];
         const used=Object.values(itemTypesCategoriesMap).some(c=>Object.prototype.hasOwnProperty.call(c,category));
         if(!used){delete categoryModelsMap[category]; delete categoryAssignedFieldsMap[category];}
+        logSecurityAction('حذف فئة', `تم حذف الفئة (${category}) من الصنف (${itemType})`);
         saveSystemData(); renderCategoriesConfigTable(); populateCategorySelects(); populateDeviceItemTypeSelect(document.getElementById("devItemType")?.value || ""); renderAll(); showAlert("تم حذف الفئة بنجاح!");
     }
 
@@ -3659,6 +3822,7 @@
         if (!confirm(`هل أنت متأكد من حذف ${ids.size} جهاز/أجهزة محددة؟ لا يمكن التراجع عن هذه العملية.`)) return;
 
         devices = devices.filter(device => !ids.has(Number(device.id)));
+        logSecurityAction('حذف متعدد', `تم حذف ${ids.size} جهاز/أجهزة من السجل`);
         saveSystemData();
         renderAll();
         showAlert(`تم حذف ${ids.size} جهاز/أجهزة محددة بنجاح.`);
@@ -3746,8 +3910,10 @@
         if(isEdit) {
             const idx = devices.findIndex(d => Number(d.id) === Number(id));
             if(idx !== -1) devices[idx] = devData;
+            logSecurityAction('تعديل جهاز', `تم تعديل بيانات الجهاز: ${name} (${mac})`);
         } else {
             devices.push(devData);
+            logSecurityAction('إضافة جهاز', `تم إضافة جهاز جديد: ${name} (${mac}) في الموقع (${location})`);
         }
 
         saveSystemData();
@@ -3783,6 +3949,7 @@
 
         if(confirm("هل أنت تأكد من إزالة هذا الجهاز من النظام؟")) {
             devices = devices.filter(item => Number(item.id) !== Number(id));
+            logSecurityAction('حذف جهاز', `تم حذف الجهاز: ${d.name} (${d.mac || d.serial})`);
             saveSystemData();
             renderAll();
             showAlert("تم الحذف بنجاح!");
@@ -3988,6 +4155,7 @@
                 movements[idx].mac = dev.mac;
                 movements[idx].ip = dev.ip || '';
                 movements[idx].reason = reason;
+                logSecurityAction('تعديل تحويل', `تم تعديل مسار التحويل للجهاز (${dev.name}) إلى (${dest})`);
                 showAlert("تم تحديث بيانات التحويل بنجاح!");
             } else {
                 const movementRecord = {
@@ -4005,6 +4173,7 @@
                     createdBy: currentLoggedInUserObj.name
                 };
                 movements.push(movementRecord);
+                logSecurityAction('تسجيل تحويل', `تم إنشاء أمر نقل للجهاز (${dev.name}) من (${source}) إلى (${dest})`);
                 showAlert("تم إنشاء أمر التحويل بنجاح وهو بانتظار الاستلام!");
             }
 
@@ -4023,7 +4192,7 @@
         }
 
         if(!checkUserPermission('move_receive')) {
-            showAlert("عذراً، لا تمتلك صلاحية استلام التحويلات!", "danger");
+            showAlert("عذراً، لا تمتلك صلاحية استلاستلام التحويلات!", "danger");
             return;
         }
 
@@ -4061,6 +4230,7 @@
             }
         });
 
+        logSecurityAction('استلام تحويل', `تم تأكيد استلام الجهاز (${m.device}) في الموقع (${m.to})`);
         saveSystemData();
         renderAll();
         showAlert("تم استلاستلام التحويل بنجاح وتم نقل الجهاز إلى عهدة (" + m.to + ")");
@@ -4093,6 +4263,7 @@
         }
 
         movements[index].status = "مرفوضة";
+        logSecurityAction('رفض تحويل', `تم رفض أمر نقل الجهاز (${m.device})`);
         saveSystemData();
         renderMovementsTable();
         showAlert("تم رفض التحويل بنجاح!", "warning");
@@ -4126,7 +4297,8 @@
             return;
         }
         if(confirm("هل أنت متأكد من حذف سجل التحويل هذا؟")) {
-            movements.splice(index, 1);
+            const removed = movements.splice(index, 1);
+            logSecurityAction('حذف تحويل', `تم حذف سجل التحويل الخاص بالجهاز: ${removed[0]?.device || '-'}`);
             saveSystemData();
             renderMovementsTable();
             showAlert("تم حذف سجل التحويل بنجاح!");
@@ -4197,6 +4369,7 @@
         }
 
         maintenance.push(maintRecord);
+        logSecurityAction('تسجيل صيانة', `تم تسجيل أمر صيانة للجهاز (${dev.name}) ووصف العطل: ${issue}`);
         saveSystemData();
         renderAll();
         bootstrap.Modal.getInstance(document.getElementById('maintModal')).hide();
@@ -4369,8 +4542,10 @@
         if(isEdit) {
             const idx = users.findIndex(u => Number(u.id) === Number(idVal));
             if(idx !== -1) users[idx] = userData;
+            logSecurityAction('تعديل مستخدم', `تم تعديل بيانات وصلاحيات المستخدم: ${name}`);
         } else {
             users.push(userData);
+            logSecurityAction('إضافة مستخدم', `تم إضافة مستخدم جديد: ${name} (${username})`);
         }
 
         saveSystemData();
@@ -4414,7 +4589,9 @@
             return;
         }
         if(confirm("هل أنت متأكد من حذف هذا المستخدم؟")) {
+            const u = users.find(x => Number(x.id) === Number(id));
             users = users.filter(u => Number(u.id) !== Number(id));
+            logSecurityAction('حذف مستخدم', `تم حذف المستخدم: ${u ? u.name : id}`);
             saveSystemData();
             renderUsersTable();
             showAlert("تم الحذف بنجاح!");
@@ -4464,7 +4641,7 @@
     }
 
     function exportBackup() {
-        const data = { devices, towers, customWarehouses, movements, maintenance, users, categoryModelsMap, itemTypesCategoriesMap, categoryAssignedFieldsMap, customSystemFields, brandingSettings, uiCustomization, tabVisibility };
+        const data = { devices, towers, customWarehouses, movements, maintenance, auditLogs, users, categoryModelsMap, itemTypesCategoriesMap, categoryAssignedFieldsMap, customSystemFields, brandingSettings, uiCustomization, tabVisibility };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -4494,6 +4671,7 @@
                 if(parsed.customWarehouses) customWarehouses = parsed.customWarehouses;
                 if(parsed.movements) movements = parsed.movements;
                 if(parsed.maintenance) maintenance = parsed.maintenance;
+                if(parsed.auditLogs) auditLogs = parsed.auditLogs;
                 if(parsed.users) users = parsed.users;
                 if(parsed.categoryModelsMap) categoryModelsMap = parsed.categoryModelsMap;
                 if(parsed.itemTypesCategoriesMap) itemTypesCategoriesMap = parsed.itemTypesCategoriesMap;
@@ -4503,6 +4681,7 @@
                 if(parsed.uiCustomization) uiCustomization = parsed.uiCustomization;
                 if(parsed.tabVisibility) tabVisibility = parsed.tabVisibility;
 
+                logSecurityAction('استعادة نسخة', 'تمت استعادة إعدادات وبيانات النظام من ملف احتياطي بنجاح');
                 saveSystemData();
                 applySettingsToUI();
                 renderAll();
