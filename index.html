@@ -504,7 +504,7 @@
                         <div class="d-flex gap-2 flex-wrap">
                             <input type="text" id="movementSearchInput" class="form-control form-control-sm" placeholder="بحث ذكي في الحركات..." onkeyup="renderMovementsTable()" style="width: 240px;">
                             <button class="btn btn-outline-success btn-sm text-nowrap" onclick="exportMovementsExcel()">
-                                <i class="fa-solid fa-file-excel me-1"></i> تصدير البيانات المحددة (Excel)
+                                <i class="fa-solid fa-file-excel me-1"></i> تصدير البيانات (Excel)
                             </button>
                             <button class="btn btn-success btn-sm" id="btnCreateMovement" onclick="openTransferModal()">
                                 <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> تسجيل حركة نقل جديدة
@@ -1299,6 +1299,24 @@
     </div>
 </div>
 
+<!-- Modal: View Movement Details -->
+<div class="modal fade" id="viewMovementModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white px-4 py-3">
+                <h5 class="modal-title fs-5"><i class="fa-solid fa-eye me-2"></i>تفاصيل حركة التحويل</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <div id="movementDetailsContent" class="vstack gap-2"></div>
+            </div>
+            <div class="modal-footer bg-white px-4 py-2">
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Maintenance Action -->
 <div class="modal fade" id="maintModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -1433,6 +1451,7 @@
             sectionKey: "movements_section",
             sectionName: "سجل حركة وتحويلات الأجهزة",
             items: [
+                { id: "move_view", label: "زر عرض تفاصيل الحركة" },
                 { id: "move_new", label: "زر تسجيل حركة جديد" },
                 { id: "move_receive", label: "زر استلام" },
                 { id: "move_reject", label: "زر رفض" },
@@ -1627,7 +1646,6 @@
         return { screens: screensObj, admin: adminObj };
     }
 
-    // --- الدوال المحدثة والمضمونة لحفظ واسترجاع البيانات بفعالية عالية ---
     async function saveSystemData() {
         const payload = {
             devices,
@@ -1647,7 +1665,6 @@
         };
 
         try {
-            // حفظ سحابي ومحلي متزامن لضمان عدم ضياع أي تعديل
             localStorage.setItem('yemen_net_master_data', JSON.stringify(payload));
             await fetch('/api/system-data', {
                 method: 'POST',
@@ -1683,7 +1700,6 @@
                 throw new Error("بيانات فارغة من الخادم");
             }
         } catch(e) {
-            // الاعتماد على التخزين المحلي كبديل فوري في حال انقطاع الاتصال
             const localData = localStorage.getItem('yemen_net_master_data');
             if (localData) {
                 try {
@@ -1720,7 +1736,6 @@
         isCloudDataLoaded = true;
         if(callback) callback();
     }
-    // -------------------------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
         loadSystemDataFromCloud(() => {
@@ -2777,6 +2792,7 @@
                 if (!assignedFrom.includes(currentLoggedInUserObj.name) && !assignedTo.includes(currentLoggedInUserObj.name)) return;
             }
 
+            const canView = checkUserPermission('move_view');
             const canReceive = checkUserPermission('move_receive');
             const canReject = checkUserPermission('move_reject');
             const canEdit = checkUserPermission('move_edit');
@@ -2800,6 +2816,7 @@
                     <td><span class="badge ${badgeClass}">${escapeHtml(m.status)}</span></td>
                     <td>
                         <div class="btn-group btn-group-sm">
+                            ${canView ? `<button class="btn btn-outline-info" title="عرض التفاصيل" onclick="viewMovementDetails(${index})"><i class="fa-solid fa-eye"></i></button>` : ''}
                             ${canReceive && m.status === 'معلقة قيد الاستلام' ? `<button class="btn btn-outline-success" title="استلام" onclick="receiveMovement(${index})"><i class="fa-solid fa-check"></i></button>` : ''}
                             ${canReject && m.status === 'معلقة قيد الاستلام' ? `<button class="btn btn-outline-danger" title="رفض" onclick="rejectMovement(${index})"><i class="fa-solid fa-xmark"></i></button>` : ''}
                             ${canEdit ? `<button class="btn btn-outline-primary" title="تعديل" onclick="editMovement(${index})"><i class="fa-solid fa-pen"></i></button>` : ''}
@@ -2809,6 +2826,34 @@
                 </tr>
             `;
         });
+    }
+
+    function viewMovementDetails(index) {
+        if (!checkUserPermission('move_view')) {
+            showAlert("عذراً، لا تمتلك صلاحية عرض تفاصيل الحركة!", "danger");
+            return;
+        }
+        const m = movements[index];
+        if (!m) return;
+
+        const container = document.getElementById("movementDetailsContent");
+        container.innerHTML = `
+            <div class="p-3 bg-white border rounded shadow-sm">
+                <div class="row g-2">
+                    <div class="col-md-6"><strong>تاريخ الحركة:</strong> ${escapeHtml(m.date)}</div>
+                    <div class="col-md-6"><strong>نوع الحركة:</strong> ${escapeHtml(m.type)}</div>
+                    <div class="col-md-6"><strong>اسم الجهاز:</strong> ${escapeHtml(m.device || '-')}</div>
+                    <div class="col-md-6"><strong>MAC / السيريال:</strong> <code>${escapeHtml(m.mac || '-')}</code></div>
+                    <div class="col-md-6"><strong>IP:</strong> ${escapeHtml(m.ip || '-')}</div>
+                    <div class="col-md-6"><strong>من المصدر:</strong> ${escapeHtml(m.from)}</div>
+                    <div class="col-md-6"><strong>إلى الوجهة المستلمة:</strong> ${escapeHtml(m.to)}</div>
+                    <div class="col-md-6"><strong>المسؤول / المنشئ:</strong> ${escapeHtml(m.user || '-')}</div>
+                    <div class="col-md-12"><strong>حالة التحويل:</strong> <span class="badge bg-secondary">${escapeHtml(m.status)}</span></div>
+                    <div class="col-md-12"><strong>سبب التحويل / ملاحظات:</strong> <p class="text-muted mb-0 bg-light p-2 rounded">${escapeHtml(m.reason || 'لا توجد ملاحظات')}</p></div>
+                </div>
+            </div>
+        `;
+        new bootstrap.Modal(document.getElementById('viewMovementModal')).show();
     }
 
     function exportMovementsExcel() {
@@ -2828,6 +2873,27 @@
             return;
         }
 
+        // تحديد الحقول التي تحتوي على بيانات فقط لتصديرها ديناميكياً
+        const availableMovementKeys = [
+            { key: 'date', label: 'التاريخ' },
+            { key: 'type', label: 'نوع الحركة' },
+            { key: 'device', label: 'اسم الجهاز' },
+            { key: 'mac', label: 'MAC / السيريال' },
+            { key: 'ip', label: 'IP' },
+            { key: 'from', label: 'من المصدر' },
+            { key: 'to', label: 'إلى الجهة المستلمة' },
+            { key: 'reason', label: 'سبب التحويل / ملاحظات' },
+            { key: 'user', label: 'المسؤول' },
+            { key: 'status', label: 'الحالة' }
+        ];
+
+        const activeFields = availableMovementKeys.filter(f => {
+            return filtered.some(m => {
+                const val = m[f.key];
+                return val !== undefined && val !== null && String(val).trim() !== "" && String(val).trim() !== "-";
+            });
+        });
+
         let htmlTable = `
             <html dir="rtl">
             <head>
@@ -2845,15 +2911,13 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>التاريخ</th>
-                        <th>نوع الحركة</th>
-                        <th>اسم الجهاز</th>
-                        <th>MAC</th>
-                        <th>من المصدر</th>
-                        <th>إلى الجهة المستلمة</th>
-                        <th>سبب التحويل / ملاحظات</th>
-                        <th>المسؤول</th>
-                        <th>الحالة</th>
+        `;
+
+        activeFields.forEach(f => {
+            htmlTable += `<th>${escapeHtml(f.label)}</th>`;
+        });
+
+        htmlTable += `
                     </tr>
                 </thead>
                 <tbody>
@@ -2863,17 +2927,14 @@
             htmlTable += `
                 <tr>
                     <td>${idx + 1}</td>
-                    <td>${escapeHtml(m.date)}</td>
-                    <td>${escapeHtml(m.type)}</td>
-                    <td>${escapeHtml(m.device || '')}</td>
-                    <td>${escapeHtml(m.mac || '')}</td>
-                    <td>${escapeHtml(m.from)}</td>
-                    <td>${escapeHtml(m.to)}</td>
-                    <td>${escapeHtml(m.reason || '-')}</td>
-                    <td>${escapeHtml(m.user)}</td>
-                    <td>${escapeHtml(m.status)}</td>
-                </tr>
             `;
+
+            activeFields.forEach(f => {
+                let val = m[f.key] !== undefined && m[f.key] !== null && String(m[f.key]).trim() !== "" ? m[f.key] : '-';
+                htmlTable += `<td>${escapeHtml(val)}</td>`;
+            });
+
+            htmlTable += `</tr>`;
         });
 
         htmlTable += `</tbody></table></body></html>`;
@@ -2886,7 +2947,7 @@
         document.body.appendChild(link);
         link.click();
         link.remove();
-        showAlert("تم تصدير البيانات بنجاح كملف Excel!");
+        showAlert("تم تصدير الحقول التي تحتوي على بيانات فقط بنجاح كملف Excel!");
     }
 
     function exportDevicesExcel() {
@@ -3996,7 +4057,7 @@
 
         movements.forEach((item, idx) => {
             if (idx !== index && String(item.deviceId) === String(m.deviceId) && item.status === "معلقة قيد الاستلام") {
-                item.status = "مرفوضة (تم استلام الجهاز بجهة أخرى)";
+                item.status = "مرفوضة (تم استلاستلام الجهاز بجهة أخرى)";
             }
         });
 
